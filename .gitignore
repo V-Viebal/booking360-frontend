@@ -1,0 +1,8 @@
+node_modules
+.angular
+dist
+.tmp
+.env
+.env.*
+!.env.example
+.vscode
