@@ -1,0 +1,44 @@
+<section class="page">
+  <header class="page__header">
+    <p class="page__kicker">Booking detail</p>
+    <h1 class="page__title">{{ booking()?.title || 'Booking' }}</h1>
+    <p class="page__description">View booking details, customer info, and resource assignment.</p>
+  </header>
+
+  <div class="page__body">
+    @if (loading()) {
+      <p>Loading booking...</p>
+    } @else if (error()) {
+      <p class="error-message">{{ error() }}</p>
+      <p><a routerLink="/bookings">Back to bookings</a></p>
+    } @else if (booking()) {
+      <div class="detail-card">
+        <h2 class="detail-card__title">{{ booking()!.title }}</h2>
+        <dl class="detail-card__details">
+          <dt>Resource</dt>
+          <dd>{{ booking()!.resourceName }}</dd>
+          <dt>Owner</dt>
+          <dd>{{ booking()!.ownerDisplayName }}</dd>
+          <dt>Start time</dt>
+          <dd>{{ booking()!.startAt | date:'medium' }}</dd>
+          <dt>End time</dt>
+          <dd>{{ booking()!.endAt | date:'medium' }}</dd>
+          <dt>Status</dt>
+          <dd>{{ booking()!.status }}</dd>
+          <dt>Notes</dt>
+          <dd>{{ booking()!.notes || 'No notes' }}</dd>
+          <dt>Created</dt>
+          <dd>{{ booking()!.createdAt | date:'medium' }}</dd>
+        </dl>
+        <div class="detail-card__actions">
+          @if (booking()!.status !== 'Cancelled') {
+            <button class="btn btn--danger" (click)="cancelBooking()" [disabled]="cancelling()">
+              {{ cancelling() ? 'Cancelling...' : 'Cancel booking' }}
+            </button>
+          }
+          <a routerLink="/bookings" class="btn btn--secondary">Back to bookings</a>
+        </div>
+      </div>
+    }
+  </div>
+</section>

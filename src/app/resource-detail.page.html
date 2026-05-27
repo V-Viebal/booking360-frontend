@@ -1,0 +1,35 @@
+<section class="page">
+  <header class="page__header">
+    <p class="page__kicker">Resource detail</p>
+    <h1 class="page__title">{{ resource()?.name || 'Resource' }}</h1>
+    <p class="page__description">View resource details, availability, and booking history.</p>
+  </header>
+
+  <div class="page__body">
+    @if (loading()) {
+      <p>Loading resource...</p>
+    } @else if (error()) {
+      <p class="error-message">{{ error() }}</p>
+      <p><a routerLink="/resources">Back to resources</a></p>
+    } @else if (resource()) {
+      <div class="detail-card">
+        <h2 class="detail-card__title">{{ resource()!.name }}</h2>
+        <dl class="detail-card__details">
+          <dt>Location</dt>
+          <dd>{{ resource()!.location || 'Not specified' }}</dd>
+          <dt>Description</dt>
+          <dd>{{ resource()!.description || 'No description' }}</dd>
+          <dt>Capacity</dt>
+          <dd>{{ resource()!.capacity }} people</dd>
+          <dt>Hourly rate</dt>
+          <dd>${{ resource()!.hourlyRate }}</dd>
+          <dt>Status</dt>
+          <dd>{{ resource()!.isActive ? 'Active' : 'Inactive' }}</dd>
+          <dt>Created</dt>
+          <dd>{{ resource()!.createdAt | date:'medium' }}</dd>
+        </dl>
+        <a routerLink="/resources" class="btn btn--secondary">Back to resources</a>
+      </div>
+    }
+  </div>
+</section>

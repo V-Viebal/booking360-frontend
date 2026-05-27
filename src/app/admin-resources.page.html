@@ -1,0 +1,33 @@
+<section class="page">
+  <header class="page__header">
+    <p class="page__kicker">Resources</p>
+    <h1 class="page__title">Resource management</h1>
+    <p class="page__description">Manage bookable resources.</p>
+  </header>
+
+  <div class="page__body">
+    @if (loading()) {
+      <p>Loading resources...</p>
+    } @else if (error()) {
+      <p class="error-message">{{ error() }}</p>
+    } @else {
+      <p>Total resources: {{ resources().length }}</p>
+      <div class="resource-grid">
+        @for (resource of resources(); track resource.id) {
+          <div class="resource-card">
+            <h3 class="resource-card__name">{{ resource.name }}</h3>
+            <p class="resource-card__location">{{ resource.location || 'No location' }}</p>
+            <div class="resource-card__meta">
+              <span class="resource-card__capacity">Capacity: {{ resource.capacity }}</span>
+              <span class="resource-card__rate">${{ resource.hourlyRate }}/hr</span>
+              <span class="resource-card__status" [class.status--active]="resource.isActive" [class.status--inactive]="!resource.isActive">
+                {{ resource.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+      <p><a routerLink="/admin">Back to admin</a></p>
+    }
+  </div>
+</section>

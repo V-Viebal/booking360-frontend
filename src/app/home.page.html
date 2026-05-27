@@ -1,0 +1,66 @@
+<section class="page">
+  <header class="page__header">
+    <p class="page__kicker">Mission control</p>
+    <h1 class="page__title">Booking360</h1>
+    <p class="page__description">Resource booking platform. Manage spaces, schedules, and teams.</p>
+  </header>
+
+  <div class="page__body">
+    <div class="status-card">
+      <h2 class="status-card__title">System status</h2>
+      <div class="status-card__row">
+        <span class="status-card__label">API</span>
+        <span class="status-card__value" [class.status--ok]="apiStatus() === 'Online'" [class.status--error]="apiStatus() === 'Offline'">{{ apiStatus() }}</span>
+      </div>
+      <div class="status-card__row">
+        <span class="status-card__label">Session</span>
+        <span class="status-card__value">{{ authenticated() ? 'Authenticated' : 'Not signed in' }}</span>
+      </div>
+      @if (error()) {
+        <p class="status-card__error">{{ error() }}</p>
+      }
+    </div>
+
+    @if (authenticated()) {
+      <nav class="nav-grid" aria-label="Main navigation">
+        <a routerLink="/workspace" class="nav-card">
+          <span class="nav-card__icon" aria-hidden="true">&#9881;</span>
+          <span class="nav-card__label">Workspace</span>
+          <span class="nav-card__desc">Session and quick actions</span>
+        </a>
+        <a routerLink="/resources" class="nav-card">
+          <span class="nav-card__icon" aria-hidden="true">&#9632;</span>
+          <span class="nav-card__label">Resources</span>
+          <span class="nav-card__desc">Browse bookable spaces</span>
+        </a>
+        <a routerLink="/bookings" class="nav-card">
+          <span class="nav-card__icon" aria-hidden="true">&#128197;</span>
+          <span class="nav-card__label">Bookings</span>
+          <span class="nav-card__desc">Manage reservations</span>
+        </a>
+        <a routerLink="/calendar" class="nav-card">
+          <span class="nav-card__icon" aria-hidden="true">&#128467;</span>
+          <span class="nav-card__label">Calendar</span>
+          <span class="nav-card__desc">Schedule overview</span>
+        </a>
+        <a routerLink="/reports" class="nav-card">
+          <span class="nav-card__icon" aria-hidden="true">&#128202;</span>
+          <span class="nav-card__label">Reports</span>
+          <span class="nav-card__desc">Metrics and summaries</span>
+        </a>
+        @if (user()?.roles?.includes('Admin')) {
+          <a routerLink="/admin" class="nav-card nav-card--admin">
+            <span class="nav-card__icon" aria-hidden="true">&#128274;</span>
+            <span class="nav-card__label">Admin</span>
+            <span class="nav-card__desc">Platform management</span>
+          </a>
+        }
+      </nav>
+    } @else {
+      <div class="cta-section">
+        <p>Sign in to access your workspace, manage bookings, and view resources.</p>
+        <button class="btn btn--primary" (click)="login()">Sign in with Logto</button>
+      </div>
+    }
+  </div>
+</section>

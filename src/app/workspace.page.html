@@ -1,0 +1,49 @@
+<section class="page">
+  <header class="page__header">
+    <p class="page__kicker">Control hub</p>
+    <h1 class="page__title">Workspace</h1>
+    <p class="page__description">Your session state and quick actions.</p>
+  </header>
+
+  <div class="page__body">
+    @if (loading()) {
+      <p>Loading workspace...</p>
+    } @else if (error()) {
+      <p class="error-message">{{ error() }}</p>
+    } @else if (currentUser()) {
+      <div class="user-card">
+        <h2 class="user-card__title">Session</h2>
+        <dl class="user-card__details">
+          <dt>Display name</dt>
+          <dd>{{ currentUser()!.displayName }}</dd>
+          <dt>Email</dt>
+          <dd>{{ currentUser()!.email }}</dd>
+          <dt>Username</dt>
+          <dd>{{ currentUser()!.username }}</dd>
+          <dt>Roles</dt>
+          <dd>{{ currentUser()!.roles.join(', ') || 'None' }}</dd>
+          <dt>Member since</dt>
+          <dd>{{ currentUser()!.createdAt | date:'medium' }}</dd>
+          <dt>Last seen</dt>
+          <dd>{{ currentUser()!.lastSeenAt | date:'medium' }}</dd>
+        </dl>
+        <button class="btn btn--secondary" (click)="logout()">Sign out</button>
+      </div>
+
+      <nav class="quick-actions">
+        <h2 class="quick-actions__title">Quick actions</h2>
+        <div class="quick-actions__grid">
+          <a routerLink="/resources" class="action-card">
+            <span class="action-card__label">Browse resources</span>
+          </a>
+          <a routerLink="/bookings" class="action-card">
+            <span class="action-card__label">View bookings</span>
+          </a>
+          <a routerLink="/calendar" class="action-card">
+            <span class="action-card__label">Open calendar</span>
+          </a>
+        </div>
+      </nav>
+    }
+  </div>
+</section>

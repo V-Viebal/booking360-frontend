@@ -1,0 +1,88 @@
+<section class="page">
+  <header class="page__header">
+    <p class="page__kicker">Overview</p>
+    <h1 class="page__title">Admin</h1>
+    <p class="page__description">Workspace activity and sync status.</p>
+  </header>
+
+  <div class="page__body">
+    @if (loading()) {
+      <p>Loading admin overview...</p>
+    } @else if (error()) {
+      <p class="error-message">{{ error() }}</p>
+    } @else if (overview()) {
+      <div class="admin-overview">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <h3 class="metric-card__label">Users</h3>
+            <p class="metric-card__value">{{ overview()!.counts.users }}</p>
+          </div>
+          <div class="metric-card">
+            <h3 class="metric-card__label">Resources</h3>
+            <p class="metric-card__value">{{ overview()!.counts.resources }}</p>
+          </div>
+          <div class="metric-card">
+            <h3 class="metric-card__label">Bookings</h3>
+            <p class="metric-card__value">{{ overview()!.counts.bookings }}</p>
+          </div>
+          <div class="metric-card">
+            <h3 class="metric-card__label">Assets</h3>
+            <p class="metric-card__value">{{ overview()!.counts.assets }}</p>
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <h2 class="admin-section__title">Latest users</h2>
+          @if (overview()!.latestUsers.length === 0) {
+            <p>No users yet.</p>
+          } @else {
+            <div class="user-list">
+              @for (user of overview()!.latestUsers; track user.subject) {
+                <div class="user-item">
+                  <p class="user-item__name">{{ user.displayName }}</p>
+                  <p class="user-item__email">{{ user.email }}</p>
+                  <p class="user-item__roles">{{ user.roles.join(', ') || 'No roles' }}</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="admin-section">
+          <h2 class="admin-section__title">Latest bookings</h2>
+          @if (overview()!.latestBookings.length === 0) {
+            <p>No bookings yet.</p>
+          } @else {
+            <div class="booking-list">
+              @for (booking of overview()!.latestBookings; track booking.id) {
+                <a [routerLink]="['/bookings', booking.id]" class="booking-card">
+                  <h3 class="booking-card__title">{{ booking.title }}</h3>
+                  <p class="booking-card__resource">{{ booking.resourceName }}</p>
+                  <p class="booking-card__owner">{{ booking.ownerDisplayName }}</p>
+                  <div class="booking-card__time">
+                    <span>{{ booking.startAt | date:'short' }}</span>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+        </div>
+
+        <nav class="admin-nav">
+          <h2 class="admin-nav__title">Admin sections</h2>
+          <div class="admin-nav__grid">
+            <a routerLink="/admin/resources" class="nav-card">
+              <span class="nav-card__label">Manage resources</span>
+            </a>
+            <a routerLink="/admin/users" class="nav-card">
+              <span class="nav-card__label">Manage users</span>
+            </a>
+            <a routerLink="/admin/settings" class="nav-card">
+              <span class="nav-card__label">Platform settings</span>
+            </a>
+          </div>
+        </nav>
+      </div>
+    }
+  </div>
+</section>
