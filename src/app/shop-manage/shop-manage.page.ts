@@ -38,11 +38,93 @@ import {
             <span class="stat">Đã huỷ: <strong>{{ countByStatus(t, 'cancelled') }}</strong></span>
             <span class="stat">Trạng thái:
               <strong [class.online]="t.shop.status === 'active'" [class.offline]="t.shop.status !== 'active'">
-                {{ t.shop.status === 'active' ? 'Mở nhận lịch' : 'Đang tạm dừng' }}
+                {{ shopStatusLabel(t.shop.status) }}
               </strong>
             </span>
           </div>
         </header>
+
+        <!-- W6: Quick toggles — status state machine + capacity presets + early-close picker -->
+        <section class="card quick-toggles">
+          <h2>Điều khiển nhanh</h2>
+
+          <div class="toggle-group">
+            <span class="toggle-label">Trạng thái nhận lịch</span>
+            <div class="pill-row">
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.status === 'active'"
+                [disabled]="togglingStatus()"
+                (click)="setStatus('active')">Đang nhận</button>
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.status === 'paused_today'"
+                [disabled]="togglingStatus()"
+                (click)="setStatus('paused_today')">Tạm dừng hôm nay</button>
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.status === 'paused'"
+                [disabled]="togglingStatus()"
+                (click)="setStatus('paused')">Tạm dừng tới khi mở lại</button>
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.status === 'temp_full'"
+                [disabled]="togglingStatus()"
+                (click)="setStatus('temp_full')">Hết slot hôm nay</button>
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.status === 'closed_today'"
+                [disabled]="togglingStatus()"
+                (click)="setStatus('closed_today')">Đóng hôm nay</button>
+            </div>
+            @if (t.shop.status === 'paused' && t.shop.pausedUntil) {
+              <p class="muted small">Tạm dừng tới: {{ t.shop.pausedUntil | date:'dd/MM HH:mm' }}</p>
+            }
+          </div>
+
+          <div class="toggle-group">
+            <span class="toggle-label">Sức chứa mỗi slot</span>
+            <div class="pill-row">
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.maxOnlinePerSlot === 1"
+                [disabled]="togglingCapacity()"
+                (click)="setCapacity(1)">1 khách</button>
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.maxOnlinePerSlot === 2"
+                [disabled]="togglingCapacity()"
+                (click)="setCapacity(2)">2 khách</button>
+              <button type="button"
+                class="pill"
+                [class.active]="t.shop.maxOnlinePerSlot === 3"
+                [disabled]="togglingCapacity()"
+                (click)="setCapacity(3)">3 khách</button>
+              <button type="button"
+                class="pill warn"
+                [disabled]="togglingCapacity()"
+                (click)="setCapacity(0)">Hết slot ngay</button>
+            </div>
+            <p class="muted small">Hiện tại: {{ t.shop.maxOnlinePerSlot }} khách/slot</p>
+          </div>
+
+          <div class="toggle-group">
+            <span class="toggle-label">Đóng cửa sớm hôm nay</span>
+            <div class="pill-row">
+              <button type="button" class="pill" [class.active]="t.shop.earlyCloseToday === '17:00'" [disabled]="togglingEarlyClose()" (click)="setEarlyClose('17:00')">17:00</button>
+              <button type="button" class="pill" [class.active]="t.shop.earlyCloseToday === '18:00'" [disabled]="togglingEarlyClose()" (click)="setEarlyClose('18:00')">18:00</button>
+              <button type="button" class="pill" [class.active]="t.shop.earlyCloseToday === '19:00'" [disabled]="togglingEarlyClose()" (click)="setEarlyClose('19:00')">19:00</button>
+              <button type="button" class="pill" [class.active]="t.shop.earlyCloseToday === '20:00'" [disabled]="togglingEarlyClose()" (click)="setEarlyClose('20:00')">20:00</button>
+              <button type="button" class="pill warn" [disabled]="togglingEarlyClose() || !t.shop.earlyCloseToday" (click)="setEarlyClose(null)">Bỏ đóng sớm</button>
+            </div>
+            @if (t.shop.earlyCloseToday) {
+              <p class="muted small">Đang đóng sớm lúc {{ t.shop.earlyCloseToday }} hôm nay (tự reset sau 00:00).</p>
+            }
+          </div>
+
+          @if (toggleError()) { <p class="err">{{ toggleError() }}</p> }
+          @if (toggleMessage()) { <p class="ok">{{ toggleMessage() }}</p> }
+        </section>
 
         <nav class="tabs">
           <button type="button" [class.active]="tab() === 'today'" (click)="tab.set('today')">Lịch hôm nay</button>
@@ -269,6 +351,21 @@ import {
     .ok { color: #16a34a; margin-top: 0.5rem; }
     .err { color: #dc2626; margin-top: 0.5rem; }
     input[readonly] { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; font-family: monospace; font-size: 0.85rem; box-sizing: border-box; margin: 0.4rem 0; }
+    /* W6: quick-toggle UI */
+    .quick-toggles { display: grid; gap: 1.1rem; }
+    .quick-toggles h2 { margin: 0 0 0.25rem 0; font-size: 1.1rem; }
+    .toggle-group { display: grid; gap: 0.45rem; }
+    .toggle-label { font-size: 0.85rem; color: #374151; font-weight: 600; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .pill { padding: 0.45rem 0.85rem; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; color: #1f2937; font-weight: 500; cursor: pointer; font-size: 0.9rem; line-height: 1.2; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+    .pill:hover:not(:disabled) { border-color: #2563eb; }
+    .pill.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .pill.warn { border-color: #fca5a5; color: #b91c1c; }
+    .pill.warn.active { background: #dc2626; color: #fff; border-color: #dc2626; }
+    .pill:disabled { opacity: 0.5; cursor: not-allowed; }
+    .small { font-size: 0.8rem; }
+    .stat .online { color: #16a34a; }
+    .stat .offline { color: #b45309; }
   `]
 })
 export class ShopManagePageComponent implements OnInit {
@@ -292,6 +389,13 @@ export class ShopManagePageComponent implements OnInit {
   protected readonly replyDrafts = signal<Record<string, string>>({});
   protected readonly replySendingId = signal<string | null>(null);
   protected readonly replyError = signal<string | null>(null);
+
+  // W6: quick-toggle UI state
+  protected readonly togglingStatus = signal(false);
+  protected readonly togglingCapacity = signal(false);
+  protected readonly togglingEarlyClose = signal(false);
+  protected readonly toggleError = signal<string | null>(null);
+  protected readonly toggleMessage = signal<string | null>(null);
 
   protected readonly configForm = this.fb.nonNullable.group({
     openTime: ['07:00'],
@@ -447,6 +551,84 @@ export class ShopManagePageComponent implements OnInit {
       this.replyError.set(err instanceof Error ? err.message : 'Không thể gửi phản hồi.');
     } finally {
       this.replySendingId.set(null);
+    }
+  }
+
+
+  // === W6 quick-toggle methods ===
+
+  shopStatusLabel(status: string): string {
+    switch (status) {
+      case 'active': return 'Đang nhận lịch';
+      case 'paused_today': return 'Tạm dừng hôm nay';
+      case 'paused': return 'Tạm dừng tới khi mở lại';
+      case 'closed_today': return 'Đóng cửa hôm nay';
+      case 'temp_full': return 'Hết slot hôm nay';
+      default: return status || '–';
+    }
+  }
+
+  async setStatus(status: 'active' | 'paused_today' | 'paused' | 'closed_today' | 'temp_full'): Promise<void> {
+    if (!this.accessToken) return;
+    let pausedUntil: string | null = null;
+    if (status === 'paused') {
+      const ans = (typeof window !== 'undefined') ? window.prompt('Tạm dừng tới khi nào? (YYYY-MM-DD HH:mm, để trống = không hạn)', '') : '';
+      if (ans && ans.trim()) {
+        const d = new Date(ans.trim().replace(' ', 'T'));
+        if (isNaN(d.getTime()) || d.getTime() <= Date.now()) {
+          this.toggleError.set('Thời điểm hết tạm dừng phải hợp lệ và ở tương lai.');
+          return;
+        }
+        pausedUntil = d.toISOString();
+      }
+    }
+    this.togglingStatus.set(true);
+    this.toggleError.set(null);
+    this.toggleMessage.set(null);
+    try {
+      await this.api.setShopStatus(this.accessToken, { status, pausedUntil });
+      this.toggleMessage.set('Đã cập nhật trạng thái: ' + this.shopStatusLabel(status));
+      await this.refresh();
+    } catch (err) {
+      this.toggleError.set(err instanceof Error ? err.message : 'Không thể đổi trạng thái.');
+    } finally {
+      this.togglingStatus.set(false);
+    }
+  }
+
+  async setCapacity(maxOnlinePerSlot: number): Promise<void> {
+    if (!this.accessToken) return;
+    this.togglingCapacity.set(true);
+    this.toggleError.set(null);
+    this.toggleMessage.set(null);
+    try {
+      await this.api.setShopCapacity(this.accessToken, { maxOnlinePerSlot });
+      this.toggleMessage.set(maxOnlinePerSlot === 0
+        ? 'Đã đặt hết slot hôm nay.'
+        : 'Đã đặt sức chứa: ' + maxOnlinePerSlot + ' khách/slot.');
+      await this.refresh();
+    } catch (err) {
+      this.toggleError.set(err instanceof Error ? err.message : 'Không thể đổi sức chứa.');
+    } finally {
+      this.togglingCapacity.set(false);
+    }
+  }
+
+  async setEarlyClose(earlyCloseToday: string | null): Promise<void> {
+    if (!this.accessToken) return;
+    this.togglingEarlyClose.set(true);
+    this.toggleError.set(null);
+    this.toggleMessage.set(null);
+    try {
+      await this.api.setShopEarlyClose(this.accessToken, { earlyCloseToday });
+      this.toggleMessage.set(earlyCloseToday
+        ? 'Đã đặt giờ đóng sớm hôm nay: ' + earlyCloseToday
+        : 'Đã bỏ giờ đóng sớm hôm nay.');
+      await this.refresh();
+    } catch (err) {
+      this.toggleError.set(err instanceof Error ? err.message : 'Không thể đổi giờ đóng sớm.');
+    } finally {
+      this.togglingEarlyClose.set(false);
     }
   }
 }

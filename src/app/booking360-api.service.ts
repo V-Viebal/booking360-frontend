@@ -249,6 +249,19 @@ export interface ShopConfigRequest {
   pausedUntil?: string | null;
 }
 
+export interface ShopStatusRequest {
+  status: 'active' | 'paused_today' | 'paused' | 'closed_today' | 'temp_full';
+  pausedUntil?: string | null;
+}
+
+export interface ShopCapacityRequest {
+  maxOnlinePerSlot: number; // 0 = temp_full shorthand, else 1..6
+}
+
+export interface ShopEarlyCloseRequest {
+  earlyCloseToday?: string | null; // 'HH:mm' or null to clear
+}
+
 // --- Booking360 reviews (Wave 5) types ---
 
 export interface PublicReview {
@@ -485,6 +498,27 @@ export class Booking360ApiService {
   async updateShopConfig(token: string, req: ShopConfigRequest): Promise<ShopOwnerView> {
     return this.fetchJson<ShopOwnerView>('/api/shop/m/' + encodeURIComponent(token) + '/configure', {
       method: 'PATCH',
+      body: JSON.stringify(req)
+    }, false);
+  }
+
+  setShopStatus(token: string, req: ShopStatusRequest): Promise<ShopOwnerView> {
+    return this.fetchJson<ShopOwnerView>('/api/shop/m/' + encodeURIComponent(token) + '/status', {
+      method: 'POST',
+      body: JSON.stringify(req)
+    }, false);
+  }
+
+  setShopCapacity(token: string, req: ShopCapacityRequest): Promise<ShopOwnerView> {
+    return this.fetchJson<ShopOwnerView>('/api/shop/m/' + encodeURIComponent(token) + '/capacity', {
+      method: 'POST',
+      body: JSON.stringify(req)
+    }, false);
+  }
+
+  setShopEarlyClose(token: string, req: ShopEarlyCloseRequest): Promise<ShopOwnerView> {
+    return this.fetchJson<ShopOwnerView>('/api/shop/m/' + encodeURIComponent(token) + '/early-close', {
+      method: 'POST',
       body: JSON.stringify(req)
     }, false);
   }
