@@ -145,3 +145,93 @@
 
 .icon-md { width: 18px; height: 18px; }
 .icon-sm { width: 14px; height: 14px; }
+/* ---------- Public shell (book360 vi-VN) ---------- */
+
+.public-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+.public-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.public-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.public-logo-mark {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.4rem;
+}
+
+.public-logo-text { font-size: 1.05rem; }
+
+.public-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.public-nav-link {
+  text-decoration: none;
+  color: #475569;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.public-nav-link:hover { background: rgba(148, 163, 184, 0.12); color: #0f172a; }
+
+.public-nav-link--cta {
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.public-nav-link--cta:hover { background: #1d4ed8; color: #fff; }
+
+.public-main { flex: 1; padding: 0; }
+
+.public-footer {
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  background: #ffffff;
+  padding: 1rem 1.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.public-footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.public-footer-link { color: #2563eb; text-decoration: none; }
+.public-footer-link:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .public-header { padding: 0.75rem 1rem; }
+  .public-footer-inner { flex-direction: column; align-items: flex-start; }
+}

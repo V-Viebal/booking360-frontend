@@ -1,4 +1,4 @@
-import { PLATFORM_ID, Injectable, inject } from '@angular/core';
+import { PLATFORM_ID, PendingTasks, Injectable, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 import { AuthService } from './core/auth/auth.service';
@@ -252,6 +252,7 @@ export interface ShopConfigRequest {
 @Injectable({ providedIn: 'root' })
 export class Booking360ApiService {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly pendingTasks = inject(PendingTasks);
   private readonly auth = inject(AuthService);
 
   // --- Foundation ---
@@ -435,8 +436,13 @@ export class Booking360ApiService {
   }
 
   private async fetchJson<T>(path: string, init?: RequestInit, requiresAuth = false): Promise<T> {
-    const response = await this.send(path, init, requiresAuth);
-    return (await response.json()) as T;
+    const removeTask = this.pendingTasks.add();
+    try {
+      const response = await this.send(path, init, requiresAuth);
+      return (await response.json()) as T;
+    } finally {
+      removeTask();
+    }
   }
 
   private async send(path: string, init?: RequestInit, requiresAuth = false): Promise<Response> {

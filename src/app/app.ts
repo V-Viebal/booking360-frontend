@@ -42,6 +42,15 @@ export class App {
     this.auth.user()?.displayName || 'Operator'
   );
 
+  protected readonly isPublicRoute = computed<boolean>(() => {
+    const url = this.currentUrl();
+    if (url === '/' || url === '') return true;
+    if (url.startsWith('/shops')) return true;
+    if (url.startsWith('/b/')) return true;
+    if (url.startsWith('/m/')) return true;
+    return false;
+  });
+
   protected readonly currentBreadcrumb = computed<{ prefix: string; current: string }>(() => {
     const url = this.currentUrl();
     if (url === '/') return { prefix: '', current: 'Dashboard' };
