@@ -126,12 +126,36 @@ export interface PublicShopListItem {
   distanceKm: number | null;
 }
 
+export interface ShopReliability {
+  badge: 'excellent' | 'good' | 'fair' | 'poor' | 'unknown';
+  cancelCount30d: number;
+  totalBookings30d: number;
+}
+
 export interface PublicShopDetail extends PublicShopListItem {
   workingDays: number[];
   slotDurationMinutes: number;
   maxOnlinePerSlot: number;
   pausedUntil: string | null;
   earlyCloseToday: string | null;
+  reliability?: ShopReliability;
+}
+
+export interface VerifyRequestBody {
+  phone: string;
+  bookingId?: string | null;
+}
+
+export interface VerifyRequestResponse {
+  token: string;
+  expiresAt: string;
+  verifyUrl: string;
+}
+
+export interface VerifyConsumeResponse {
+  phone: string;
+  bookingId?: string | null;
+  verifiedAt: string;
 }
 
 export interface ShopRegistrationRequest {
@@ -458,6 +482,19 @@ export class Booking360ApiService {
     return this.fetchJson<PublicShopDetail>('/api/public/shops/' + encodeURIComponent(slug), undefined, false);
   }
 
+  /** W7: request a 1-click phone-verification link (REQ-EC-013). */
+  async requestPhoneVerification(req: VerifyRequestBody): Promise<VerifyRequestResponse> {
+    return this.fetchJson<VerifyRequestResponse>('/api/public/bookings/verify/request', {
+      method: 'POST',
+      body: JSON.stringify(req)
+    }, false);
+  }
+
+  /** W7: consume a verification token (single-use, 25-min TTL). */
+  async consumePhoneVerification(token: string): Promise<VerifyConsumeResponse> {
+    return this.fetchJson<VerifyConsumeResponse>('/api/public/bookings/verify/' + encodeURIComponent(token), undefined, false);
+  }
+
   async listPublicShopSlots(slug: string, date?: string): Promise<SlotListResponse> {
     const query = date ? ('?date=' + encodeURIComponent(date)) : '';
     return this.fetchJson<SlotListResponse>('/api/public/shops/' + encodeURIComponent(slug) + '/slots' + query, undefined, false);
@@ -603,7 +640,27 @@ export class Booking360ApiService {
     });
 
     if (!response.ok) {
-      throw new Error('Backend returned ' + response.status);
+      // Try to surface backend's vi-VN error field for nicer UX (rate limits, validation, etc).
+      let serverMessage: string | null = null;
+      try {
+        const cloned = response.clone();
+        const text = await cloned.text();
+        if (text) {
+          try {
+            const json = JSON.parse(text) as { error?: string };
+            if (json && typeof json.error === 'string' && json.error.trim()) {
+              serverMessage = json.error.trim();
+            }
+          } catch {
+            // not JSON — ignore
+          }
+        }
+      } catch {
+        // body already consumed — ignore
+      }
+      const err = new Error(serverMessage ?? ('Backend returned ' + response.status)) as Error & { status?: number };
+      err.status = response.status;
+      throw err;
     }
 
     return response;

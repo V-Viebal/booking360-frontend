@@ -31,6 +31,12 @@ import {
         } @else {
           <p class="muted small">Quán chưa có đánh giá</p>
         }
+        @if (s.reliability && s.reliability.badge !== 'unknown') {
+          <p class="reliability">
+            <span class="reliability-badge reliability--{{ s.reliability.badge }}">{{ reliabilityLabel(s.reliability.badge) }}</span>
+            <span class="muted small">· {{ s.reliability.cancelCount30d }} huỷ / {{ s.reliability.totalBookings30d }} lịch trong 30 ngày</span>
+          </p>
+        }
         @if (s.status !== 'active') {
           <p class="banner banner-warn">Quán đang tạm dừng nhận lịch.</p>
         } @else if (s.pausedUntil) {
@@ -174,6 +180,13 @@ import {
     .btn { padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 600; border: 0; cursor: pointer; }
     .btn-primary { background: #2563eb; color: #fff; }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .reliability { margin: 0.25rem 0 0; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .reliability-badge { padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em; }
+    .reliability--excellent { background: #dcfce7; color: #166534; }
+    .reliability--good { background: #e0f2fe; color: #075985; }
+    .reliability--fair { background: #fef9c3; color: #854d0e; }
+    .reliability--poor { background: #fee2e2; color: #991b1b; }
+    .small { font-size: 0.85rem; }
   `]
 })
 export class ShopDetailPageComponent implements OnInit {
@@ -293,6 +306,16 @@ export class ShopDetailPageComponent implements OnInit {
       this.reviews.set([]);
     } finally {
       this.reviewsLoading.set(false);
+    }
+  }
+
+  reliabilityLabel(badge: string): string {
+    switch (badge) {
+      case 'excellent': return 'Rất uy tín';
+      case 'good': return 'Uy tín';
+      case 'fair': return 'Cần cải thiện';
+      case 'poor': return 'Hay huỷ lịch';
+      default: return '';
     }
   }
 

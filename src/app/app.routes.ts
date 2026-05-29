@@ -6,6 +6,7 @@ import { ShopDetailPageComponent } from './public/shop-detail.page';
 import { ShopRegisterPageComponent } from './public/shop-register.page';
 import { BookingByTokenPageComponent } from './public/booking-by-token.page';
 import { ReviewPageComponent } from './public/review.page';
+import { VerifyPhonePageComponent } from './public/verify-phone.page';
 import { ShopManagePageComponent } from './shop-manage/shop-manage.page';
 
 import { ResourcesPageComponent } from './resources.page';
@@ -54,6 +55,11 @@ export const routes: Routes = [
     path: 'b/:token',
     component: BookingByTokenPageComponent,
     data: { kicker: 'Đặt chỗ', title: 'Lịch đặt của bạn', description: 'Xem hoặc huỷ đặt chỗ' }
+  },
+  {
+    path: 'verify/:token',
+    component: VerifyPhonePageComponent,
+    data: { kicker: 'Xác minh', title: 'Xác minh số điện thoại', description: 'Xác minh 1-chạm số điện thoại Booking360' }
   },
   {
     path: 'm/:token',
