@@ -10,7 +10,15 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+const angularApp = new AngularNodeAppEngine({
+  allowedHosts: [
+    'book360.hmz.one',
+    'api-book360.hmz.one',
+    'localhost',
+    '127.0.0.1',
+  ],
+  trustProxyHeaders: true,
+});
 
 /**
  * Example Express Rest API endpoints can be defined here.
@@ -23,6 +31,13 @@ const angularApp = new AngularNodeAppEngine();
  * });
  * ```
  */
+
+/**
+ * Trust the reverse proxy (Traefik) so that req.protocol and req.ip reflect
+ * the original client request. Required when running behind Traefik with
+ * X-Forwarded-* headers.
+ */
+app.set('trust proxy', true);
 
 /**
  * Serve static files from /browser
