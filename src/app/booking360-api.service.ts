@@ -207,6 +207,25 @@ export interface ShopRegistrationResponse {
   publicUrl: string;
 }
 
+// W12 — Shop owner self-service recovery (REQ-TC-014).
+export interface ShopRecoveryRequestBody {
+  phone: string;
+}
+export interface ShopRecoveryRequestResponse {
+  ok: boolean;
+  message: string;
+}
+export interface ShopRecoveryClaimBody {
+  phone: string;
+  code: string;
+}
+export interface ShopRecoveryClaimResponse {
+  ok: boolean;
+  shopAccessToken: string;
+  manageUrl: string;
+  message: string;
+}
+
 export interface SlotResponse {
   slotTime: string;
   onlineCount: number;
@@ -544,6 +563,24 @@ export class Booking360ApiService {
     return this.fetchJson<ShopRegistrationResponse>('/api/public/shops/register', {
       method: 'POST',
       body: JSON.stringify(request)
+    }, false);
+  }
+
+  // W12 — REQ-TC-014: shop owner self-service recovery.
+  // The request endpoint always returns ok=true regardless of whether the phone
+  // matches a registered shop (privacy). The 6-digit code is delivered via the
+  // configured notification channel (zns/sms/email/log).
+  async requestShopRecovery(body: ShopRecoveryRequestBody): Promise<ShopRecoveryRequestResponse> {
+    return this.fetchJson<ShopRecoveryRequestResponse>('/api/shop/recovery/request', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }, false);
+  }
+
+  async claimShopRecovery(body: ShopRecoveryClaimBody): Promise<ShopRecoveryClaimResponse> {
+    return this.fetchJson<ShopRecoveryClaimResponse>('/api/shop/recovery/claim', {
+      method: 'POST',
+      body: JSON.stringify(body)
     }, false);
   }
 

@@ -7,6 +7,7 @@ import { ShopRegisterPageComponent } from './public/shop-register.page';
 import { BookingByTokenPageComponent } from './public/booking-by-token.page';
 import { ReviewPageComponent } from './public/review.page';
 import { VerifyPhonePageComponent } from './public/verify-phone.page';
+import { ShopRecoverPageComponent } from './public/shop-recover.page';
 import { ShopManagePageComponent } from './shop-manage/shop-manage.page';
 
 import { ResourcesPageComponent } from './resources.page';
@@ -60,6 +61,11 @@ export const routes: Routes = [
     path: 'verify/:token',
     component: VerifyPhonePageComponent,
     data: { kicker: 'Xác minh', title: 'Xác minh số điện thoại', description: 'Xác minh 1-chạm số điện thoại Booking360' }
+  },
+  {
+    path: 'shop/recover',
+    component: ShopRecoverPageComponent,
+    data: { kicker: 'Khôi phục', title: 'Khôi phục liên kết quản lý quán', description: 'Lấy lại liên kết /m/... bằng số điện thoại đã đăng ký' }
   },
   {
     path: 'm/:token',
