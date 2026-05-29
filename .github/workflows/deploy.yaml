@@ -140,45 +140,15 @@ jobs:
 
           mkdir -p "${release_dir}"
           mv "$runtime_source" "${release_dir}/.env.frontend.runtime"
-          touch "${release_dir}/.env.backend.runtime"
-          current_backend_image="$(docker inspect --format '{{.Config.Image}}' booking360-backend 2>/dev/null || true)"
-          if [ -z "${current_backend_image}" ]; then
-            current_backend_image="vviebal/booking360-backend:production"
-          fi
           echo "RELEASE_DIR=${release_dir}" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE_TAG=${{ steps.meta.outputs.image_tag }}" >> "$GITHUB_ENV"
-          echo "CURRENT_BACKEND_IMAGE=${current_backend_image}" >> "$GITHUB_ENV"
 
-      - name: Write deploy compose file
+      - name: Write frontend compose file
         shell: bash
         run: |
           set -euo pipefail
-          cat > "${RELEASE_DIR}/compose.deploy.yml" <<EOF
+          cat > "${RELEASE_DIR}/compose.frontend.yml" <<EOF
           services:
-            booking360-backend:
-              image: ${CURRENT_BACKEND_IMAGE}
-              container_name: booking360-backend
-              restart: unless-stopped
-              extra_hosts:
-                - "host.docker.internal:host-gateway"
-              env_file:
-                - .env.backend.runtime
-              environment:
-                ASPNETCORE_URLS: http://+:8101
-                ASPNETCORE_ENVIRONMENT: Production
-                APP_ENV_PREFIX: BOOKING360
-                APP_FRONTEND_URL: https://${FRONTEND_DOMAIN}
-              labels:
-                - "traefik.enable=true"
-                - "traefik.docker.network=coolify"
-                - "traefik.http.routers.booking360-backend.rule=Host(\`${API_DOMAIN}\`)"
-                - "traefik.http.routers.booking360-backend.entrypoints=https"
-                - "traefik.http.routers.booking360-backend.tls=true"
-                - "traefik.http.routers.booking360-backend.tls.certresolver=letsencrypt"
-                - "traefik.http.services.booking360-backend.loadbalancer.server.port=8101"
-              networks:
-                - coolify
-
             booking360-frontend:
               image: ${FRONTEND_IMAGE_TAG}
               container_name: booking360-frontend
@@ -212,7 +182,18 @@ jobs:
           cd "${RELEASE_DIR}"
           docker pull "${FRONTEND_IMAGE_TAG}"
           docker rm -f booking360-frontend >/dev/null 2>&1 || true
-          docker compose -f compose.deploy.yml up -d --no-deps --force-recreate booking360-frontend
+          docker compose -f compose.frontend.yml up -d --no-deps --force-recreate booking360-frontend
+
+      - name: Verify deployed image matches build
+        shell: bash
+        run: |
+          set -euo pipefail
+          running_image="$(docker inspect --format '{{.Config.Image}}' booking360-frontend)"
+          if [ "$running_image" != "${FRONTEND_IMAGE_TAG}" ]; then
+            echo "Running image $running_image does not match expected ${FRONTEND_IMAGE_TAG}"
+            exit 1
+          fi
+          echo "Verified running image: $running_image"
 
       - name: Health check
         shell: bash
