@@ -37,7 +37,7 @@ export const routes: Routes = [
   {
     path: 'shops/register',
     component: ShopRegisterPageComponent,
-    data: { kicker: 'Đăng ký', title: 'Đăng ký quán lên Booking360', description: 'Tự đăng ký quán cà phê' }
+    data: { kicker: 'Đăng ký', title: 'Đăng ký quán lên Booking360', description: 'Tự đăng ký barbershop của bạn' }
   },
   {
     path: 'shops/:slug',

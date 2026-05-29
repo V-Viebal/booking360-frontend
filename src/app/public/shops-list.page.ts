@@ -12,7 +12,7 @@ import { Booking360ApiService, PublicShopListItem } from '../booking360-api.serv
   template: `
     <section class="page">
       <header class="page-head">
-        <h1>Tìm quán cà phê có chỗ trống</h1>
+        <h1>Tìm barbershop gần bạn</h1>
         <p class="muted">Chọn khu vực hoặc nhập tên để lọc các quán đã đăng ký Booking360.</p>
       </header>
 

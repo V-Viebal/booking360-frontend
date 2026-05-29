@@ -11,7 +11,7 @@ import { Booking360ApiService, PublicShopListItem } from '../booking360-api.serv
   template: `
     <section class="hero">
       <div class="hero-inner">
-        <span class="kicker">Booking360 cho quán cà phê</span>
+        <span class="kicker">Booking360 cho barbershop</span>
         <h1>Đặt chỗ trước, không còn cảnh chờ đợi</h1>
         <p class="lead">
           Booking360 giúp bạn xem nhanh các quán có chỗ trống và đặt giữ chỗ trong vài giây.

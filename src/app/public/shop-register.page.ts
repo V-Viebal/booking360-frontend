@@ -43,7 +43,7 @@ import { Booking360ApiService, ShopRegistrationResponse } from '../booking360-ap
         <form [formGroup]="form" (ngSubmit)="submit()" class="card">
           <label class="field">
             <span>Tên quán *</span>
-            <input type="text" formControlName="name" placeholder="Cà phê Sài Gòn 1975" />
+            <input type="text" formControlName="name" placeholder="Barber Minh Tuấn" />
             @if (form.controls.name.touched && form.controls.name.invalid) {
               <small class="err">Tên quán phải có ít nhất 2 ký tự.</small>
             }
