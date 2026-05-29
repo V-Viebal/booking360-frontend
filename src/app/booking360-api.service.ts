@@ -105,6 +105,150 @@ export interface AdminOverviewResponse {
   }[];
 }
 
+
+// --- Booking360 public (Wave 1) types ---
+
+export interface PublicShopListItem {
+  id: string;
+  slug: string;
+  name: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  phone: string;
+  openTime: string;
+  closeTime: string;
+  status: string;
+  photoUrl: string | null;
+  priceSegment: string | null;
+  happyScore: number | null;
+  reviewCount: number;
+  distanceKm: number | null;
+}
+
+export interface PublicShopDetail extends PublicShopListItem {
+  workingDays: number[];
+  slotDurationMinutes: number;
+  maxOnlinePerSlot: number;
+  pausedUntil: string | null;
+  earlyCloseToday: string | null;
+}
+
+export interface ShopRegistrationRequest {
+  name: string;
+  phone: string;
+  address: string;
+  lat?: number | null;
+  lng?: number | null;
+  openTime: string;
+  closeTime: string;
+  workingDays?: number[];
+}
+
+export interface ShopRegistrationResponse {
+  id: string;
+  slug: string;
+  name: string;
+  phone: string;
+  address: string;
+  shopAccessToken: string;
+  manageUrl: string;
+  publicUrl: string;
+}
+
+export interface SlotResponse {
+  slotTime: string;
+  onlineCount: number;
+  capacity: number;
+  available: boolean;
+}
+
+export interface SlotListResponse {
+  shopSlug: string;
+  date: string;
+  slotDurationMinutes: number;
+  maxOnlinePerSlot: number;
+  openTime: string;
+  closeTime: string;
+  slots: SlotResponse[];
+}
+
+export interface PublicBookingRequest {
+  shopId: string;
+  customerName: string;
+  customerPhone: string;
+  slotTime: string;
+  note?: string | null;
+}
+
+export interface PublicBookingResponse {
+  bookingToken: string;
+  shopId: string;
+  shopSlug: string | null;
+  shopName: string | null;
+  shopAddress?: string | null;
+  customerName: string;
+  customerPhone: string;
+  slotTime: string;
+  note: string | null;
+  status: string;
+  cancelledBy: string | null;
+  cancelReason: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  manageUrl?: string;
+}
+
+export interface ShopOwnerView {
+  id: string;
+  slug: string;
+  name: string;
+  phone: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  openTime: string;
+  closeTime: string;
+  workingDays: number[];
+  slotDurationMinutes: number;
+  maxOnlinePerSlot: number;
+  status: string;
+  pausedUntil: string | null;
+  earlyCloseToday: string | null;
+  cancelCount30d: number;
+  publicUrl: string;
+}
+
+export interface ShopBookingRow {
+  bookingToken: string;
+  customerName: string;
+  customerPhone: string;
+  slotTime: string;
+  note: string | null;
+  status: string;
+  cancelledBy: string | null;
+  cancelReason: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface ShopTodayResponse {
+  shop: ShopOwnerView;
+  date: string;
+  bookings: ShopBookingRow[];
+  slots: SlotResponse[];
+}
+
+export interface ShopConfigRequest {
+  openTime?: string;
+  closeTime?: string;
+  workingDays?: number[];
+  slotDurationMinutes?: number;
+  maxOnlinePerSlot?: number;
+  earlyCloseToday?: string;
+  pausedUntil?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class Booking360ApiService {
   private readonly platformId = inject(PLATFORM_ID);
@@ -214,6 +358,74 @@ export class Booking360ApiService {
 
   async loadAdminOverview(): Promise<AdminOverviewResponse> {
     return this.fetchJson<AdminOverviewResponse>('/api/admin/overview', undefined, true);
+  }
+
+  
+  // --- Booking360 public discovery (Wave 1) ---
+
+  async listPublicShops(opts?: { lat?: number; lng?: number; radiusKm?: number; limit?: number }): Promise<PublicShopListItem[]> {
+    const params = new URLSearchParams();
+    if (opts?.lat != null) params.set('lat', String(opts.lat));
+    if (opts?.lng != null) params.set('lng', String(opts.lng));
+    if (opts?.radiusKm != null) params.set('radiusKm', String(opts.radiusKm));
+    if (opts?.limit != null) params.set('limit', String(opts.limit));
+    const query = params.toString() ? '?' + params.toString() : '';
+    return this.fetchJson<PublicShopListItem[]>('/api/public/shops' + query, undefined, false);
+  }
+
+  async getPublicShop(slug: string): Promise<PublicShopDetail> {
+    return this.fetchJson<PublicShopDetail>('/api/public/shops/' + encodeURIComponent(slug), undefined, false);
+  }
+
+  async listPublicShopSlots(slug: string, date?: string): Promise<SlotListResponse> {
+    const query = date ? ('?date=' + encodeURIComponent(date)) : '';
+    return this.fetchJson<SlotListResponse>('/api/public/shops/' + encodeURIComponent(slug) + '/slots' + query, undefined, false);
+  }
+
+  async registerPublicShop(request: ShopRegistrationRequest): Promise<ShopRegistrationResponse> {
+    return this.fetchJson<ShopRegistrationResponse>('/api/public/shops/register', {
+      method: 'POST',
+      body: JSON.stringify(request)
+    }, false);
+  }
+
+  async createPublicBooking(request: PublicBookingRequest): Promise<PublicBookingResponse> {
+    return this.fetchJson<PublicBookingResponse>('/api/public/bookings/', {
+      method: 'POST',
+      body: JSON.stringify(request)
+    }, false);
+  }
+
+  async getPublicBookingByToken(token: string): Promise<PublicBookingResponse> {
+    return this.fetchJson<PublicBookingResponse>('/api/public/bookings/' + encodeURIComponent(token), undefined, false);
+  }
+
+  async cancelPublicBookingByToken(token: string, reason?: string): Promise<PublicBookingResponse> {
+    return this.fetchJson<PublicBookingResponse>('/api/public/bookings/' + encodeURIComponent(token) + '/cancel', {
+      method: 'POST',
+      body: JSON.stringify({ reason: reason ?? null })
+    }, false);
+  }
+
+  // --- Booking360 shop self-management (Wave 1) ---
+
+  async getShopToday(token: string, date?: string): Promise<ShopTodayResponse> {
+    const query = date ? ('?date=' + encodeURIComponent(date)) : '';
+    return this.fetchJson<ShopTodayResponse>('/api/shop/m/' + encodeURIComponent(token) + '/today' + query, undefined, false);
+  }
+
+  async updateShopConfig(token: string, req: ShopConfigRequest): Promise<ShopOwnerView> {
+    return this.fetchJson<ShopOwnerView>('/api/shop/m/' + encodeURIComponent(token) + '/configure', {
+      method: 'PATCH',
+      body: JSON.stringify(req)
+    }, false);
+  }
+
+  async cancelBookingFromShop(token: string, bookingToken: string, reason?: string): Promise<ShopBookingRow> {
+    return this.fetchJson<ShopBookingRow>('/api/shop/m/' + encodeURIComponent(token) + '/bookings/' + encodeURIComponent(bookingToken) + '/cancel', {
+      method: 'POST',
+      body: JSON.stringify({ reason: reason ?? null })
+    }, false);
   }
 
   // --- Helpers ---
