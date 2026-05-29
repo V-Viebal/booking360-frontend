@@ -42,10 +42,18 @@ export class App {
     this.auth.user()?.displayName || 'Operator'
   );
 
+  private routePath(): string {
+    const raw = this.currentUrl() || '/';
+    const noHash = raw.split('#')[0];
+    const noQuery = noHash.split('?')[0];
+    return noQuery || '/';
+  }
+
   protected readonly isPublicRoute = computed<boolean>(() => {
-    const url = this.currentUrl();
+    const url = this.routePath();
     if (url === '/' || url === '') return true;
-    if (url.startsWith('/shops')) return true;
+    if (url === '/shops' || url.startsWith('/shops/')) return true;
+    if (url === '/shops/register') return true;
     if (url.startsWith('/b/')) return true;
     if (url.startsWith('/m/')) return true;
     return false;
@@ -86,7 +94,7 @@ export class App {
   }
 
   protected isRouteActive(route: string): boolean {
-    const currentUrl = this.currentUrl();
+    const currentUrl = this.routePath();
     if (route === '/') return currentUrl === '/';
     return currentUrl === route || currentUrl.startsWith(route + "/");
   }

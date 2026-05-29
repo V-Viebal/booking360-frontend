@@ -9,14 +9,14 @@ export interface Booking360RuntimeConfig {
   readonly scope: string;
 }
 
-const productionOrigin = 'https://Booking360.app360.space';
-const productionApiBaseUrl = 'https://api-Booking360.app360.space';
+const productionOrigin = 'https://book360.hmz.one';
+const productionApiBaseUrl = 'https://api-book360.hmz.one';
 const localApiBaseUrl = 'http://localhost:5200';
-const authOrigin = 'https://auth-Booking360.app360.space';
+const authOrigin = 'https://auth-book360.hmz.one';
 const authIssuer = `${authOrigin}/oidc`;
 const productionClientId = 'hfvtpxz1se1je14lr8pp0';
 const localClientId = 'g1sm1vt7fhkvpch34099y';
-const apiResource = 'https://api-Booking360.app360.space';
+const apiResource = 'https://api-book360.hmz.one';
 const scope = [
   'openid',
   'profile',
