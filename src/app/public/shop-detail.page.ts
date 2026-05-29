@@ -7,7 +7,9 @@ import {
   Booking360ApiService,
   PublicShopDetail,
   SlotListResponse,
-  SlotResponse
+  SlotResponse,
+  PublicReview,
+  ShopReviewsResponse
 } from '../booking360-api.service';
 
 @Component({
@@ -21,6 +23,14 @@ import {
         <h1>{{ s.name }}</h1>
         <p class="muted">{{ s.address }}</p>
         <p class="muted">📞 {{ s.phone }} · ⏰ {{ s.openTime }} – {{ s.closeTime }}</p>
+        @if ((s.reviewCount ?? 0) > 0) {
+          <p class="happy">
+            <span class="happy-score">★ {{ (s.happyScore ?? 0) | number:'1.1-2' }}</span>
+            <span class="muted">· {{ s.reviewCount }} đánh giá</span>
+          </p>
+        } @else {
+          <p class="muted small">Quán chưa có đánh giá</p>
+        }
         @if (s.status !== 'active') {
           <p class="banner banner-warn">Quán đang tạm dừng nhận lịch.</p>
         } @else if (s.pausedUntil) {
@@ -94,6 +104,42 @@ import {
           </form>
         </div>
       </div>
+
+      <section class="reviews">
+        <header class="reviews-head">
+          <h2>Đánh giá từ khách</h2>
+          @if (reviewsLoading()) {
+            <span class="muted">Đang tải...</span>
+          }
+        </header>
+        @if (!reviewsLoading() && reviews().length === 0) {
+          <p class="muted">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+        }
+        @for (r of reviews(); track r.id) {
+          <article class="review">
+            <header>
+              <span class="stars" [attr.aria-label]="r.rating + ' sao'">
+                @for (n of [1,2,3,4,5]; track n) {
+                  <span class="star" [class.on]="n <= r.rating">★</span>
+                }
+              </span>
+              <span class="who">{{ r.customerDisplay || 'Khách' }}</span>
+              <span class="muted small">· {{ r.createdAt | date:'dd/MM/yyyy' }}</span>
+            </header>
+            @if (r.comment) { <p class="quote">{{ r.comment }}</p> }
+            @if (r.shopReply) {
+              <div class="reply">
+                <strong>Phản hồi của quán</strong>
+                <small class="muted">· {{ r.shopRepliedAt | date:'dd/MM/yyyy' }}</small>
+                <p>{{ r.shopReply }}</p>
+              </div>
+            }
+            <button type="button" class="btn-link" [disabled]="reportingId() === r.id" (click)="report(r.id)">
+              {{ reportedIds().has(r.id) ? 'Đã báo cáo' : 'Báo cáo' }}
+            </button>
+          </article>
+        }
+      </section>
     </section>
 
     @if (loading()) {
@@ -146,6 +192,11 @@ export class ShopDetailPageComponent implements OnInit {
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
+  protected readonly reviews = signal<PublicReview[]>([]);
+  protected readonly reviewsLoading = signal(false);
+  protected readonly reportingId = signal<string | null>(null);
+  protected readonly reportedIds = signal<Set<string>>(new Set<string>());
+
   protected readonly form = this.fb.nonNullable.group({
     customerName: ['', [Validators.required, Validators.minLength(2)]],
     customerPhone: ['', [Validators.required, Validators.pattern(/^[+0-9 \-]{9,15}$/)]],
@@ -162,7 +213,10 @@ export class ShopDetailPageComponent implements OnInit {
     try {
       const detail = await this.api.getPublicShop(slug);
       this.shop.set(detail);
-      await this.loadSlots(detail.slug, this.selectedDate());
+      await Promise.all([
+        this.loadSlots(detail.slug, this.selectedDate()),
+        this.loadReviews(detail.slug),
+      ]);
     } catch {
       this.notFound.set(true);
     } finally {
@@ -229,4 +283,33 @@ export class ShopDetailPageComponent implements OnInit {
       this.submitting.set(false);
     }
   }
+
+  private async loadReviews(slug: string): Promise<void> {
+    this.reviewsLoading.set(true);
+    try {
+      const res: ShopReviewsResponse = await this.api.listPublicShopReviews(slug, 20);
+      this.reviews.set(res.reviews ?? []);
+    } catch {
+      this.reviews.set([]);
+    } finally {
+      this.reviewsLoading.set(false);
+    }
+  }
+
+  async report(reviewId: string): Promise<void> {
+    if (this.reportedIds().has(reviewId) || this.reportingId() === reviewId) return;
+    if (!confirm('Báo cáo đánh giá này là không phù hợp?')) return;
+    this.reportingId.set(reviewId);
+    try {
+      await this.api.reportPublicReview(reviewId);
+      const next = new Set(this.reportedIds());
+      next.add(reviewId);
+      this.reportedIds.set(next);
+    } catch {
+      // intentionally swallow — UI surfaces only success state
+    } finally {
+      this.reportingId.set(null);
+    }
+  }
 }
+

@@ -5,6 +5,7 @@ import { ShopsListPageComponent } from './public/shops-list.page';
 import { ShopDetailPageComponent } from './public/shop-detail.page';
 import { ShopRegisterPageComponent } from './public/shop-register.page';
 import { BookingByTokenPageComponent } from './public/booking-by-token.page';
+import { ReviewPageComponent } from './public/review.page';
 import { ShopManagePageComponent } from './shop-manage/shop-manage.page';
 
 import { ResourcesPageComponent } from './resources.page';
@@ -43,6 +44,11 @@ export const routes: Routes = [
     path: 'shops/:slug',
     component: ShopDetailPageComponent,
     data: { kicker: 'Quán', title: 'Chi tiết quán', description: 'Đặt chỗ tại quán' }
+  },
+  {
+    path: 'b/:token/review',
+    component: ReviewPageComponent,
+    data: { kicker: 'Đánh giá', title: 'Đánh giá quán', description: 'Gửi đánh giá sau khi đến quán' }
   },
   {
     path: 'b/:token',
@@ -117,3 +123,4 @@ export const routes: Routes = [
 
   { path: '**', redirectTo: '' }
 ];
+

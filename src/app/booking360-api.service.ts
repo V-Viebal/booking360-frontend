@@ -249,6 +249,73 @@ export interface ShopConfigRequest {
   pausedUntil?: string | null;
 }
 
+// --- Booking360 reviews (Wave 5) types ---
+
+export interface PublicReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  shopReply: string | null;
+  shopRepliedAt: string | null;
+  createdAt: string;
+  customerDisplay: string | null;
+}
+
+export interface ReviewEligibilityResponse {
+  eligible: boolean;
+  reason: string | null;
+  booking: {
+    bookingToken: string;
+    slotTime: string;
+    customerName: string;
+    status: string;
+  } | null;
+  shop: {
+    id: string;
+    slug: string;
+    name: string;
+    address: string;
+  } | null;
+  existing: PublicReview | null;
+}
+
+export interface CreateReviewRequest {
+  rating: number;
+  comment?: string | null;
+}
+
+export interface CreateReviewResponse {
+  review: PublicReview;
+  shopSlug: string;
+}
+
+export interface ReportReviewResponse {
+  reportedCount: number;
+  weight: number;
+  suppressed: boolean;
+}
+
+export interface ShopReviewsResponse {
+  shopSlug: string;
+  happyScore: number | null;
+  reviewCount: number;
+  reviews: PublicReview[];
+}
+
+export interface ShopReviewRow extends PublicReview {
+  reportedCount: number;
+  weight: number;
+  suppressed: boolean;
+}
+
+export interface ShopReviewsListResponse {
+  shop: { id: string; slug: string; happyScore: number | null; reviewCount: number };
+  reviews: ShopReviewRow[];
+}
+
+export interface ShopReplyRequest {
+  reply: string;
+}
 @Injectable({ providedIn: 'root' })
 export class Booking360ApiService {
   private readonly platformId = inject(PLATFORM_ID);
@@ -361,8 +428,8 @@ export class Booking360ApiService {
     return this.fetchJson<AdminOverviewResponse>('/api/admin/overview', undefined, true);
   }
 
-  
-  // --- Booking360 public discovery (Wave 1) ---
+
+// --- Booking360 public discovery (Wave 1) ---
 
   async listPublicShops(opts?: { lat?: number; lng?: number; radiusKm?: number; limit?: number }): Promise<PublicShopListItem[]> {
     const params = new URLSearchParams();
@@ -429,6 +496,43 @@ export class Booking360ApiService {
     }, false);
   }
 
+  // --- Booking360 reviews (Wave 5) ---
+
+  async getReviewEligibility(bookingToken: string): Promise<ReviewEligibilityResponse> {
+    return this.fetchJson<ReviewEligibilityResponse>('/api/public/reviews/' + encodeURIComponent(bookingToken), undefined, false);
+  }
+
+  async submitPublicReview(bookingToken: string, request: CreateReviewRequest): Promise<CreateReviewResponse> {
+    return this.fetchJson<CreateReviewResponse>('/api/public/reviews/' + encodeURIComponent(bookingToken), {
+      method: 'POST',
+      body: JSON.stringify(request)
+    }, false);
+  }
+
+  async reportPublicReview(reviewId: string): Promise<ReportReviewResponse> {
+    return this.fetchJson<ReportReviewResponse>('/api/public/reviews/' + encodeURIComponent(reviewId) + '/report', {
+      method: 'POST',
+      body: JSON.stringify({})
+    }, false);
+  }
+
+  async listPublicShopReviews(slug: string, limit?: number): Promise<ShopReviewsResponse> {
+    const query = limit != null ? ('?limit=' + encodeURIComponent(String(limit))) : '';
+    return this.fetchJson<ShopReviewsResponse>('/api/public/shops/' + encodeURIComponent(slug) + '/reviews' + query, undefined, false);
+  }
+
+  async listShopReviewsForOwner(token: string, limit?: number): Promise<ShopReviewsListResponse> {
+    const query = limit != null ? ('?limit=' + encodeURIComponent(String(limit))) : '';
+    return this.fetchJson<ShopReviewsListResponse>('/api/shop/m/' + encodeURIComponent(token) + '/reviews' + query, undefined, false);
+  }
+
+  async replyToReview(token: string, reviewId: string, reply: string): Promise<PublicReview> {
+    return this.fetchJson<PublicReview>('/api/shop/m/' + encodeURIComponent(token) + '/reviews/' + encodeURIComponent(reviewId) + '/reply', {
+      method: 'POST',
+      body: JSON.stringify({ reply })
+    }, false);
+  }
+
   // --- Helpers ---
 
   buildApiUrl(path: string): string {
@@ -478,3 +582,4 @@ export class Booking360ApiService {
     return getBooking360RuntimeConfig().apiBaseUrl;
   }
 }
+

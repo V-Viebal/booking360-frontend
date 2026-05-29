@@ -8,6 +8,8 @@ import {
   ShopBookingRow,
   ShopOwnerView,
   ShopTodayResponse,
+  ShopReviewRow,
+  ShopReviewsListResponse,
   SlotResponse
 } from '../booking360-api.service';
 
@@ -44,6 +46,7 @@ import {
 
         <nav class="tabs">
           <button type="button" [class.active]="tab() === 'today'" (click)="tab.set('today')">Lịch hôm nay</button>
+          <button type="button" [class.active]="tab() === 'reviews'" (click)="onSelectReviewsTab()">Đánh giá ({{ reviewsCount() }})</button>
           <button type="button" [class.active]="tab() === 'config'" (click)="tab.set('config')">Cấu hình quán</button>
           <button type="button" [class.active]="tab() === 'share'" (click)="tab.set('share')">Chia sẻ liên kết</button>
         </nav>
@@ -105,6 +108,67 @@ import {
           </div>
         }
 
+        @if (tab() === 'reviews') {
+          <div class="card">
+            <div class="head-row">
+              <h2>Đánh giá khách hàng</h2>
+              <span class="muted">
+                @if (reviewsLoading()) { Đang tải... }
+                @else if (reviewsHappy() != null) {
+                  Happy score: <strong>★ {{ reviewsHappy() | number:'1.1-2' }}</strong>
+                  · {{ reviewsCount() }} đánh giá
+                }
+              </span>
+            </div>
+            @if (!reviewsLoading() && reviews().length === 0) {
+              <p class="muted">Chưa có đánh giá nào. Khách sẽ nhận liên kết đánh giá sau khi đến quán.</p>
+            }
+            @for (r of reviews(); track r.id) {
+              <article class="review" [class.suppressed]="r.suppressed">
+                <header>
+                  <span class="stars" [attr.aria-label]="r.rating + ' sao'">
+                    @for (n of [1,2,3,4,5]; track n) {
+                      <span class="star" [class.on]="n <= r.rating">★</span>
+                    }
+                  </span>
+                  <span class="who">{{ r.customerDisplay || 'Khách' }}</span>
+                  <span class="muted small">· {{ r.createdAt | date:'dd/MM/yyyy' }}</span>
+                  @if (r.reportedCount > 0) {
+                    <span class="badge badge--warn">⚠ {{ r.reportedCount }} báo cáo · weight {{ r.weight }}</span>
+                  }
+                  @if (r.suppressed) {
+                    <span class="badge badge--cancelled">Đã ẩn khỏi public</span>
+                  }
+                </header>
+                @if (r.comment) { <p class="quote">{{ r.comment }}</p> }
+                @if (r.shopReply) {
+                  <div class="reply">
+                    <strong>Phản hồi của bạn</strong>
+                    <small class="muted">· {{ r.shopRepliedAt | date:'dd/MM/yyyy HH:mm' }}</small>
+                    <p>{{ r.shopReply }}</p>
+                  </div>
+                } @else {
+                  <div class="reply-form">
+                    <textarea
+                      rows="2"
+                      maxlength="2000"
+                      placeholder="Phản hồi của quán (sẽ hiển thị công khai)"
+                      [value]="replyDrafts()[r.id] ?? ''"
+                      (input)="onReplyInput(r.id, $any($event.target).value)"></textarea>
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      [disabled]="replySendingId() === r.id || !(replyDrafts()[r.id] ?? '').trim()"
+                      (click)="submitReply(r.id)">
+                      {{ replySendingId() === r.id ? 'Đang gửi...' : 'Gửi phản hồi' }}
+                    </button>
+                  </div>
+                }
+              </article>
+            }
+            @if (replyError()) { <p class="err">{{ replyError() }}</p> }
+          </div>
+        }
         @if (tab() === 'config') {
           <form [formGroup]="configForm" (ngSubmit)="saveConfig()" class="card">
             <h2>Cấu hình quán</h2>
@@ -215,12 +279,19 @@ export class ShopManagePageComponent implements OnInit {
   protected readonly today = signal<ShopTodayResponse | null>(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
-  protected readonly tab = signal<'today' | 'config' | 'share'>('today');
+  protected readonly tab = signal<'today' | 'reviews' | 'config' | 'share'>('today');
   protected readonly selectedDate = signal<string>(new Date().toISOString().slice(0, 10));
   protected readonly savingConfig = signal(false);
   protected readonly configMessage = signal<string | null>(null);
   protected readonly configError = signal<string | null>(null);
   private accessToken = '';
+  protected readonly reviews = signal<ShopReviewRow[]>([]);
+  protected readonly reviewsLoading = signal(false);
+  protected readonly reviewsHappy = signal<number | null>(null);
+  protected readonly reviewsCount = signal(0);
+  protected readonly replyDrafts = signal<Record<string, string>>({});
+  protected readonly replySendingId = signal<string | null>(null);
+  protected readonly replyError = signal<string | null>(null);
 
   protected readonly configForm = this.fb.nonNullable.group({
     openTime: ['07:00'],
@@ -328,5 +399,54 @@ export class ShopManagePageComponent implements OnInit {
     input.select();
     try { await navigator.clipboard.writeText(input.value); }
     catch { document.execCommand('copy'); }
+  }
+
+  async onSelectReviewsTab(): Promise<void> {
+    this.tab.set('reviews');
+    await this.loadReviews();
+  }
+
+  async loadReviews(): Promise<void> {
+    if (!this.accessToken) return;
+    this.reviewsLoading.set(true);
+    this.replyError.set(null);
+    try {
+      const res: ShopReviewsListResponse = await this.api.listShopReviewsForOwner(this.accessToken, 100);
+      this.reviews.set(res.reviews ?? []);
+      this.reviewsHappy.set(res.shop?.happyScore ?? null);
+      this.reviewsCount.set(res.shop?.reviewCount ?? (res.reviews?.length ?? 0));
+    } catch (err) {
+      this.reviews.set([]);
+      this.replyError.set(err instanceof Error ? err.message : 'Không thể tải đánh giá.');
+    } finally {
+      this.reviewsLoading.set(false);
+    }
+  }
+
+  onReplyInput(reviewId: string, value: string): void {
+    const next = { ...this.replyDrafts(), [reviewId]: value };
+    this.replyDrafts.set(next);
+  }
+
+  async submitReply(reviewId: string): Promise<void> {
+    const draft = (this.replyDrafts()[reviewId] ?? '').trim();
+    if (!draft) return;
+    this.replySendingId.set(reviewId);
+    this.replyError.set(null);
+    try {
+      const updated = await this.api.replyToReview(this.accessToken, reviewId, draft);
+      // Merge updated reply into the corresponding row.
+      this.reviews.update(rows => rows.map(r =>
+        r.id === reviewId
+          ? { ...r, shopReply: updated.shopReply ?? draft, shopRepliedAt: updated.shopRepliedAt ?? new Date().toISOString() }
+          : r));
+      const next = { ...this.replyDrafts() };
+      delete next[reviewId];
+      this.replyDrafts.set(next);
+    } catch (err) {
+      this.replyError.set(err instanceof Error ? err.message : 'Không thể gửi phản hồi.');
+    } finally {
+      this.replySendingId.set(null);
+    }
   }
 }
