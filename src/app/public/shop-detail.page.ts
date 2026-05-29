@@ -20,9 +20,33 @@ import {
     <section class="page" *ngIf="shop() as s">
       <a routerLink="/shops" class="back-link">← Tất cả quán</a>
       <header class="page-head">
+        <!-- W8 REQ-EC-018: gallery hero + thumbnails (up to 8) -->
+        @if (gallery().length > 0) {
+          <div class="gallery">
+            <div class="gallery-hero">
+              <img [src]="activePhoto()" [alt]="s.name" loading="lazy" />
+            </div>
+            @if (gallery().length > 1) {
+              <div class="gallery-thumbs" role="tablist" aria-label="Bộ ảnh quán">
+                @for (url of gallery(); track url; let i = $index) {
+                  <button type="button" class="thumb" [class.thumb--active]="i === activeIndex()" (click)="setActiveIndex(i)" [attr.aria-label]="'Ảnh ' + (i + 1)">
+                    <img [src]="url" [alt]="s.name + ' ' + (i + 1)" loading="lazy" />
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
         <h1>{{ s.name }}</h1>
         <p class="muted">{{ s.address }}</p>
         <p class="muted">📞 {{ s.phone }} · ⏰ {{ s.openTime }} – {{ s.closeTime }}</p>
+        <!-- W8 REQ-GM-001/EC-018: district + price segment badges -->
+        @if (s.district || s.priceSegment) {
+          <p class="badges-row">
+            @if (s.district) { <span class="district-badge">{{ s.district }}</span> }
+            @if (s.priceSegment) { <span class="price-badge">{{ s.priceSegment }}</span> }
+          </p>
+        }
         @if ((s.reviewCount ?? 0) > 0) {
           <p class="happy">
             <span class="happy-score">★ {{ (s.happyScore ?? 0) | number:'1.1-2' }}</span>
@@ -157,6 +181,16 @@ import {
   styles: [`
     :host { display: block; }
     .page { padding: 2rem 1rem 4rem; max-width: 1100px; margin: 0 auto; }
+    .gallery { display: flex; flex-direction: column; gap: 0.5rem; margin: 0 0 1rem; }
+    .gallery-hero { aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: linear-gradient(135deg, #dbeafe, #fef3c7); }
+    .gallery-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-thumbs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .thumb { width: 64px; height: 48px; padding: 0; border: 2px solid transparent; border-radius: 6px; overflow: hidden; cursor: pointer; background: #f3f4f6; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb--active { border-color: #2563eb; }
+    .badges-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.4rem 0 0; }
+    .district-badge { background: #e0f2fe; color: #075985; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.85rem; font-weight: 500; }
+    .price-badge { background: #f3f4f6; color: #374151; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.85rem; font-weight: 500; }
     .back-link { color: #2563eb; text-decoration: none; font-size: 0.9rem; }
     .page-head h1 { margin: 0.75rem 0 0.25rem; }
     .muted { color: #6b7280; }
@@ -191,6 +225,9 @@ import {
 })
 export class ShopDetailPageComponent implements OnInit {
   private readonly api = inject(Booking360ApiService);
+
+  /** W8 REQ-EC-018: active gallery thumbnail index for the carousel. */
+  protected readonly activeIndex = signal(0);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -309,7 +346,25 @@ export class ShopDetailPageComponent implements OnInit {
     }
   }
 
-  reliabilityLabel(badge: string): string {
+  /** W8 REQ-EC-018: gallery photos (gallery first, then legacy photoUrl, else empty). */
+  gallery(): string[] {
+    const s = this.shop();
+    if (!s) return [];
+    const list = (s.photoUrls ?? []).filter(u => !!u);
+    if (list.length > 0) return list;
+    return s.photoUrl ? [s.photoUrl] : [];
+  }
+
+  activePhoto(): string {
+    const list = this.gallery();
+    if (list.length === 0) return '';
+    const i = Math.min(this.activeIndex(), list.length - 1);
+    return list[i];
+  }
+
+  setActiveIndex(i: number): void { this.activeIndex.set(i); }
+
+    reliabilityLabel(badge: string): string {
     switch (badge) {
       case 'excellent': return 'Rất uy tín';
       case 'good': return 'Uy tín';

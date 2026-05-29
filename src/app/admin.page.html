@@ -31,6 +31,72 @@
           </div>
         </div>
 
+        <!-- W8 REQ-GM-011/GM-012: today vs yesterday + 30d Happy Score + active shops. -->
+        @if (metrics(); as m) {
+          <div class="admin-section">
+            <h2 class="admin-section__title">Hôm nay (so với hôm qua)</h2>
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <h3 class="metric-card__label">Lượt đặt mới</h3>
+                <p class="metric-card__value">{{ m.today.bookingsCreated }}</p>
+                <p class="metric-card__delta">vs hôm qua: {{ delta(m.today.bookingsCreated, m.yesterday.bookingsCreated) }}</p>
+              </div>
+              <div class="metric-card">
+                <h3 class="metric-card__label">Đã xác nhận</h3>
+                <p class="metric-card__value">{{ m.today.confirmed }}</p>
+                <p class="metric-card__delta">vs hôm qua: {{ delta(m.today.confirmed, m.yesterday.confirmed) }}</p>
+              </div>
+              <div class="metric-card">
+                <h3 class="metric-card__label">No-show</h3>
+                <p class="metric-card__value">{{ m.today.noShow }}</p>
+                <p class="metric-card__delta">vs hôm qua: {{ delta(m.today.noShow, m.yesterday.noShow) }}</p>
+              </div>
+              <div class="metric-card">
+                <h3 class="metric-card__label">Quán huỷ</h3>
+                <p class="metric-card__value">{{ m.today.cancelByShop }}</p>
+                <p class="metric-card__delta">vs hôm qua: {{ delta(m.today.cancelByShop, m.yesterday.cancelByShop) }}</p>
+              </div>
+              <div class="metric-card">
+                <h3 class="metric-card__label">Khách huỷ</h3>
+                <p class="metric-card__value">{{ m.today.cancelByCustomer }}</p>
+                <p class="metric-card__delta">vs hôm qua: {{ delta(m.today.cancelByCustomer, m.yesterday.cancelByCustomer) }}</p>
+              </div>
+              <div class="metric-card">
+                <h3 class="metric-card__label">Happy Score 30d</h3>
+                <p class="metric-card__value">★ {{ m.happyScore30d | number:'1.1-2' }}</p>
+                <p class="metric-card__delta">{{ m.activeShops }} quán đang hoạt động</p>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- W8 REQ-GM-001/GM-008: per-district density for HCM expansion. -->
+        @if (density().length > 0) {
+          <div class="admin-section">
+            <h2 class="admin-section__title">Mật độ theo quận (HCM)</h2>
+            <table class="density-table">
+              <thead>
+                <tr>
+                  <th>Quận / huyện</th>
+                  <th>Số quán</th>
+                  <th>Lịch 30d</th>
+                  <th>Happy Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of density(); track row.district) {
+                  <tr>
+                    <td>{{ row.district }}</td>
+                    <td>{{ row.shopCount }}</td>
+                    <td>{{ row.bookings30d }}</td>
+                    <td>★ {{ row.happyScore | number:'1.1-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
         <div class="admin-section">
           <h2 class="admin-section__title">Latest users</h2>
           @if (overview()!.latestUsers.length === 0) {

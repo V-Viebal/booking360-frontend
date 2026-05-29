@@ -105,6 +105,29 @@ export interface AdminOverviewResponse {
   }[];
 }
 
+// W8 REQ-GM-011/GM-012: today vs yesterday operations counters.
+export interface AdminMetricsBlock {
+  bookingsCreated: number;
+  confirmed: number;
+  noShow: number;
+  cancelByShop: number;
+  cancelByCustomer: number;
+}
+export interface AdminMetricsResponse {
+  today: AdminMetricsBlock;
+  yesterday: AdminMetricsBlock;
+  happyScore30d: number;
+  activeShops: number;
+}
+
+// W8 REQ-GM-001/GM-008: per-district density rows.
+export interface AdminDistrictDensityRow {
+  district: string;
+  shopCount: number;
+  bookings30d: number;
+  happyScore: number;
+}
+
 
 // --- Booking360 public (Wave 1) types ---
 
@@ -120,7 +143,11 @@ export interface PublicShopListItem {
   closeTime: string;
   status: string;
   photoUrl: string | null;
+  /** W8 REQ-EC-018: gallery (up to 8) shown on shop card hero + detail carousel. */
+  photoUrls: string[];
   priceSegment: string | null;
+  /** W8 REQ-GM-001/GM-008: GTM district (e.g. 'Quan 7') for filters + density. */
+  district: string | null;
   happyScore: number | null;
   reviewCount: number;
   distanceKm: number | null;
@@ -240,6 +267,12 @@ export interface ShopOwnerView {
   pausedUntil: string | null;
   earlyCloseToday: string | null;
   cancelCount30d: number;
+  /** W8 REQ-EC-018: gallery (0..8 urls) shown on public shop card + detail. */
+  photoUrls?: string[];
+  /** W8 REQ-EC-018: '<80k' / '80-120k' / '>120k' price segment shown on shop card. */
+  priceSegment?: string | null;
+  /** W8 REQ-GM-001: GTM district (free text, e.g. 'Quan 7'). */
+  district?: string | null;
   publicUrl: string;
 }
 
@@ -284,6 +317,13 @@ export interface ShopCapacityRequest {
 
 export interface ShopEarlyCloseRequest {
   earlyCloseToday?: string | null; // 'HH:mm' or null to clear
+}
+
+// W8 REQ-EC-018 / SS-010: shop edits its own gallery + price segment + GTM district.
+export interface ShopProfileRequest {
+  priceSegment?: string | null;
+  photoUrls?: string[];
+  district?: string | null;
 }
 
 // --- Booking360 reviews (Wave 5) types ---
@@ -604,7 +644,32 @@ export class Booking360ApiService {
     }, false);
   }
 
-  // --- Helpers ---
+  // --- Booking360 admin metrics + density (Wave 8) ---
+
+  async loadAdminMetrics(): Promise<AdminMetricsResponse> {
+    return this.fetchJson<AdminMetricsResponse>('/api/admin/metrics', undefined, true);
+  }
+
+  async loadAdminDistrictDensity(district?: string | null): Promise<AdminDistrictDensityRow[]> {
+    const query = district && district.trim() ? '?district=' + encodeURIComponent(district.trim()) : '';
+    return this.fetchJson<AdminDistrictDensityRow[]>('/api/admin/density' + query, undefined, true);
+  }
+
+  /** W8 REQ-SS-010: print-ready vi-VN onboarding HTML page URL for ops staff. */
+  buildAdminOnboardingChecklistUrl(shopId: string): string {
+    return this.buildApiUrl('/api/admin/onboarding-checklist?shop_id=' + encodeURIComponent(shopId));
+  }
+
+  // --- Booking360 shop profile patch (Wave 8 REQ-EC-018 / SS-010) ---
+
+  async updateShopProfile(token: string, req: ShopProfileRequest): Promise<ShopOwnerView> {
+    return this.fetchJson<ShopOwnerView>('/api/shop/m/' + encodeURIComponent(token) + '/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(req)
+    }, false);
+  }
+
+    // --- Helpers ---
 
   buildApiUrl(path: string): string {
     return this.resolveApiBaseUrl() + path;

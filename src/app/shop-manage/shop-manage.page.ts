@@ -10,6 +10,7 @@ import {
   ShopTodayResponse,
   ShopReviewRow,
   ShopReviewsListResponse,
+  ShopProfileRequest,
   SlotResponse
 } from '../booking360-api.service';
 
@@ -130,6 +131,7 @@ import {
           <button type="button" [class.active]="tab() === 'today'" (click)="tab.set('today')">Lịch hôm nay</button>
           <button type="button" [class.active]="tab() === 'reviews'" (click)="onSelectReviewsTab()">Đánh giá ({{ reviewsCount() }})</button>
           <button type="button" [class.active]="tab() === 'config'" (click)="tab.set('config')">Cấu hình quán</button>
+          <button type="button" [class.active]="tab() === 'profile'" (click)="tab.set('profile')">Thông tin quán</button>
           <button type="button" [class.active]="tab() === 'share'" (click)="tab.set('share')">Chia sẻ liên kết</button>
         </nav>
 
@@ -292,6 +294,52 @@ import {
           </form>
         }
 
+        @if (tab() === 'profile') {
+          <!-- W8 REQ-EC-018 / SS-010: shop edits its own gallery, price segment, GTM district. -->
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="card">
+            <h2>Thông tin hiển thị công khai</h2>
+            <p class="muted">Khách thấy ảnh, giá tham khảo và quận/huyện trên thẻ quán và trang chi tiết.</p>
+            <div class="grid-2">
+              <label class="field">
+                <span>Phân khúc giá</span>
+                <select formControlName="priceSegment">
+                  <option value="">— Không hiển thị —</option>
+                  <option value="<80k">Dưới 80k</option>
+                  <option value="80-120k">80–120k</option>
+                  <option value=">120k">Trên 120k</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Quận / huyện</span>
+                <input type="text" maxlength="80" placeholder="Ví dụ: Quận 7, Bình Thạnh, Tân Bình..." formControlName="district" />
+              </label>
+            </div>
+            <fieldset class="photos">
+              <legend>Bộ ảnh quán (tối đa 8 ảnh)</legend>
+              <p class="muted small">Dán URL ảnh (CDN hoặc link công khai). Ảnh đầu tiên dùng làm ảnh bìa.</p>
+              <div class="photo-rows">
+                @for (url of profilePhotos(); track $index; let i = $index) {
+                  <div class="photo-row">
+                    <input type="url" [value]="url" (input)="updatePhotoUrl(i, $any($event.target).value)" placeholder="https://..." />
+                    @if (url) { <img class="photo-preview" [src]="url" alt="" loading="lazy" /> }
+                    <button type="button" class="btn-link" (click)="removePhoto(i)">Xoá</button>
+                  </div>
+                }
+              </div>
+              @if (profilePhotos().length < 8) {
+                <button type="button" class="btn-light" (click)="addPhoto()">+ Thêm ảnh</button>
+              } @else {
+                <p class="muted small">Đã đạt giới hạn 8 ảnh.</p>
+              }
+            </fieldset>
+            <button type="submit" class="btn btn-primary" [disabled]="savingProfile()">
+              {{ savingProfile() ? 'Đang lưu...' : 'Lưu thông tin' }}
+            </button>
+            @if (profileMessage()) { <p class="ok">{{ profileMessage() }}</p> }
+            @if (profileError()) { <p class="err">{{ profileError() }}</p> }
+          </form>
+        }
+
         @if (tab() === 'share') {
           <div class="card">
             <h2>Chia sẻ liên kết quán</h2>
@@ -376,7 +424,7 @@ export class ShopManagePageComponent implements OnInit {
   protected readonly today = signal<ShopTodayResponse | null>(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
-  protected readonly tab = signal<'today' | 'reviews' | 'config' | 'share'>('today');
+  protected readonly tab = signal<'today' | 'reviews' | 'config' | 'profile' | 'share'>('today');
   protected readonly selectedDate = signal<string>(new Date().toISOString().slice(0, 10));
   protected readonly savingConfig = signal(false);
   protected readonly configMessage = signal<string | null>(null);
@@ -422,6 +470,7 @@ export class ShopManagePageComponent implements OnInit {
     try {
       const t = await this.api.getShopToday(this.accessToken, this.selectedDate());
       this.today.set(t);
+      this.hydrateProfileForm(t.shop);
       this.configForm.patchValue({
         openTime: t.shop.openTime,
         closeTime: t.shop.closeTime,
@@ -629,6 +678,64 @@ export class ShopManagePageComponent implements OnInit {
       this.toggleError.set(err instanceof Error ? err.message : 'Không thể đổi giờ đóng sớm.');
     } finally {
       this.togglingEarlyClose.set(false);
+    }
+  }
+
+  // === W8 Profile tab — gallery + price segment + GTM district. ===
+
+  protected readonly profileForm = this.fb.group({
+    priceSegment: [''],
+    district: ['']
+  });
+  protected readonly profilePhotos = signal<string[]>([]);
+  protected readonly savingProfile = signal(false);
+  protected readonly profileMessage = signal<string | null>(null);
+  protected readonly profileError = signal<string | null>(null);
+
+  /** Sync profileForm + profilePhotos signal from a fresh ShopOwnerView. */
+  protected hydrateProfileForm(shop: ShopOwnerView | undefined | null): void {
+    if (!shop) return;
+    this.profileForm.patchValue({
+      priceSegment: shop.priceSegment ?? '',
+      district: shop.district ?? ''
+    }, { emitEvent: false });
+    this.profilePhotos.set([...(shop.photoUrls ?? [])]);
+  }
+
+  addPhoto(): void {
+    if (this.profilePhotos().length >= 8) return;
+    this.profilePhotos.update(rows => [...rows, '']);
+  }
+
+  removePhoto(index: number): void {
+    this.profilePhotos.update(rows => rows.filter((_, i) => i !== index));
+  }
+
+  updatePhotoUrl(index: number, value: string): void {
+    this.profilePhotos.update(rows => rows.map((r, i) => i === index ? value : r));
+  }
+
+  async saveProfile(): Promise<void> {
+    if (!this.accessToken) return;
+    this.savingProfile.set(true);
+    this.profileMessage.set(null);
+    this.profileError.set(null);
+    try {
+      const raw = this.profileForm.getRawValue();
+      const photos = this.profilePhotos().map(p => p.trim()).filter(p => !!p);
+      const req: ShopProfileRequest = {
+        priceSegment: raw.priceSegment ? raw.priceSegment : null,
+        district: raw.district ? raw.district.trim() : null,
+        photoUrls: photos
+      };
+      const updated = await this.api.updateShopProfile(this.accessToken, req);
+      this.profileMessage.set('Đã cập nhật thông tin quán.');
+      this.today.update(t => t ? { ...t, shop: updated } : t);
+      this.hydrateProfileForm(updated);
+    } catch (err) {
+      this.profileError.set(err instanceof Error ? err.message : 'Không thể lưu thông tin.');
+    } finally {
+      this.savingProfile.set(false);
     }
   }
 }
