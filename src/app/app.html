@@ -1,22 +1,63 @@
 @if (isPublicRoute()) {
-  <div class="public-layout">
-    <header class="public-header">
-      <a routerLink="/" class="public-logo">
-        <span class="public-logo-mark">b360</span>
-        <span class="public-logo-text">book360</span>
-      </a>
-      <nav class="public-nav">
-        <a routerLink="/shops" class="public-nav-link">Tìm quán</a>
-        <a routerLink="/shops/register" class="public-nav-link public-nav-link--cta">Đăng ký quán</a>
-      </nav>
+  <div class="b360-shell">
+    <header class="b360-topbar">
+      <div class="b360-topbar-inner">
+        <a routerLink="/" class="b360-brand" aria-label="book360 — Trang chủ">
+          <span class="b360-brand-mark"><span>b360</span></span>
+          <span class="b360-brand-text">book360</span>
+        </a>
+        <nav class="b360-nav" aria-label="Điều hướng chính">
+          <a routerLink="/shops" class="b360-nav-link">Tìm quán</a>
+          <a routerLink="/shop/recover" class="b360-nav-link">Khôi phục liên kết</a>
+          <a routerLink="/shops/register" class="b360-nav-link b360-nav-link--cta">Đăng ký quán</a>
+        </nav>
+      </div>
     </header>
-    <main class="public-main">
+
+    <main class="b360-main" id="main">
       <router-outlet />
     </main>
-    <footer class="public-footer">
-      <div class="public-footer-inner">
-        <span>© book360 · Đặt lịch cắt tóc nam</span>
-        <a routerLink="/shops/register" class="public-footer-link">Đưa quán của bạn lên đây</a>
+
+    <footer class="b360-footer">
+      <div class="b360-container">
+        <div class="b360-footer-grid">
+          <div>
+            <a routerLink="/" class="b360-brand" style="color:#fff;">
+              <span class="b360-brand-mark"><span>b360</span></span>
+              <span class="b360-brand-text">book360</span>
+            </a>
+            <p style="margin:.85rem 0 0; color: var(--b360-fg-on-dark-muted); max-width: 36ch; line-height: 1.55;">
+              Marketplace đặt lịch cắt tóc nam nhanh nhất Việt Nam.
+              Tìm quán gần bạn, đặt giữ chỗ trong 30 giây — không cần app, không trả trước.
+            </p>
+          </div>
+          <div>
+            <h4>Dành cho khách</h4>
+            <ul>
+              <li><a routerLink="/shops">Tìm quán</a></li>
+              <li><a routerLink="/shops">Xem chỗ trống hôm nay</a></li>
+              <li><a href="#how-it-works">Cách đặt lịch</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Dành cho chủ quán</h4>
+            <ul>
+              <li><a routerLink="/shops/register">Đăng ký quán miễn phí</a></li>
+              <li><a routerLink="/shop/recover">Khôi phục liên kết quản lý</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <ul>
+              <li><a href="mailto:hi@book360.hmz.one">hi&#64;book360.hmz.one</a></li>
+              <li><a href="https://kb.hmz.one" target="_blank" rel="noopener">Trung tâm trợ giúp</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="b360-footer-bottom">
+          <span>© {{ year }} book360 · Đặt lịch cắt tóc nam · Made in Vietnam 🇻🇳</span>
+          <span>v2 · Mobile-first · No tracking</span>
+        </div>
       </div>
     </footer>
   </div>
@@ -35,36 +76,11 @@
       </div>
 
       <ul class="sidebar-menu">
-        <li [class.active]="isRouteActive('/workspace')">
-          <a routerLink="/workspace">
-            <i data-lucide="layout-dashboard" class="icon-md"></i>
-            <span>Dashboard</span>
-          </a>
-        </li>
-        <li [class.active]="isRouteActive('/calendar')">
-          <a routerLink="/calendar">
-            <i data-lucide="calendar" class="icon-md"></i>
-            <span>Calendar</span>
-          </a>
-        </li>
-        <li [class.active]="isRouteActive('/bookings')">
-          <a routerLink="/bookings">
-            <i data-lucide="ticket" class="icon-md"></i>
-            <span>Bookings</span>
-          </a>
-        </li>
-        <li [class.active]="isRouteActive('/resources')">
-          <a routerLink="/resources">
-            <i data-lucide="layout-list" class="icon-md"></i>
-            <span>Resources</span>
-          </a>
-        </li>
-        <li [class.active]="isRouteActive('/reports')">
-          <a routerLink="/reports">
-            <i data-lucide="bar-chart-3" class="icon-md"></i>
-            <span>Reports</span>
-          </a>
-        </li>
+        <li [class.active]="isRouteActive('/workspace')"><a routerLink="/workspace"><i data-lucide="layout-dashboard" class="icon-md"></i><span>Dashboard</span></a></li>
+        <li [class.active]="isRouteActive('/calendar')"><a routerLink="/calendar"><i data-lucide="calendar" class="icon-md"></i><span>Calendar</span></a></li>
+        <li [class.active]="isRouteActive('/bookings')"><a routerLink="/bookings"><i data-lucide="ticket" class="icon-md"></i><span>Bookings</span></a></li>
+        <li [class.active]="isRouteActive('/resources')"><a routerLink="/resources"><i data-lucide="layout-list" class="icon-md"></i><span>Resources</span></a></li>
+        <li [class.active]="isRouteActive('/reports')"><a routerLink="/reports"><i data-lucide="bar-chart-3" class="icon-md"></i><span>Reports</span></a></li>
       </ul>
     </aside>
 

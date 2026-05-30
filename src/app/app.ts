@@ -23,6 +23,9 @@ export class App {
   protected readonly foundation = signal<FoundationResponse | null>(null);
   protected readonly foundationMessage = signal('Checking backend foundation.');
 
+  /** Current calendar year (for footer copyright). Stable across SSR + hydrate. */
+  protected readonly year = new Date().getFullYear();
+
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -56,6 +59,8 @@ export class App {
     if (url === '/shops/register') return true;
     if (url.startsWith('/b/')) return true;
     if (url.startsWith('/m/')) return true;
+    if (url.startsWith('/shop/recover')) return true;
+    if (url.startsWith('/verify/')) return true;
     return false;
   });
 
